@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Rubik simulator</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script type="text/javascript">
+			function toggle_visibility(id){
+				var e = document.getElementById(id);
+				if(e.style.display == 'block')
+					e.style.display = 'none';
+				else
+					e.style.display = 'block';
+			}
+			
+			function changeValue(value, axis){
+				var oldValue = parseInt(document.getElementById(axis + "_label").innerText);
+				//document.getElementById(axis + "_label").innerText = Math.max(oldValue + value, 1);
+				document.getElementById("x_label").innerText = Math.max(oldValue + value, 1);
+				document.getElementById("y_label").innerText = Math.max(oldValue + value, 1);
+				document.getElementById("z_label").innerText = Math.max(oldValue + value, 1);
+			}
+			
+			function generateCube(){
+				var x = parseInt(document.getElementById("x_label").innerText);
+				var y = parseInt(document.getElementById("y_label").innerText);
+				var z = parseInt(document.getElementById("z_label").innerText);
+				puzzle.changeDimensions(x, y, z);
+				puzzle.reset(scene);
+				camera.position.x = puzzle.initCameraX;
+				camera.position.y = puzzle.initCameraY;
+				camera.position.z = puzzle.initCameraZ;
+				toggle_visibility('popup-settings');
+			}
+		</script>
+		<script src="js/lib/three.min.js"></script>
+		<script src="js/lib/stats.min.js"></script>
+		<script src="js/lib/OrbitControls.js"></script>
+		<script src="js/lib/Projector.js"></script>
+		<script src="js/puzzle.js"></script>		
+		<link type="text/css" rel="stylesheet" href="index.css" />
+	</head>
+
+	<body>
+		<div id="container"></div>		
+		<input type="image" class="button_no_margin" id="solve_button" src="img/solved.png" onclick="puzzle.reset(scene)" ontouchstart="puzzle.reset(scene)" />
+		<input type="image" class="button_no_margin" id="scramble_button" src="img/scrambled.png" onclick="if(!puzzle.isScrambling()) puzzle.scramble()" ontouchstart="if(!puzzle.isScrambling()) puzzle.scramble()" />
+		<input type="image" class="button_no_margin" id="settings_button" src="img/settings.png" onclick="toggle_visibility('popup-settings')" ontouchstart="toggle_visibility('popup-settings')" />
+
+		<div id="popup-settings" class="popup-position" onclick="toggle_visibility('popup-settings')" ontouchstart="toggle_visibility('popup-settings')">
+			<div id="popup-wrapper" onclick="if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;" ontouchstart="if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;">
+				<div id="popup-container">
+						<h1>Settings</h1>
+						<h2>X size</h2>
+						<div style="margin-left: 20px">
+							<button onclick="changeValue(-1, 'x')" ontouchstart="changeValue(-1, 'x')">-</button>
+							<h3 id="x_label">3</h3>
+							<button onclick="changeValue(+1, 'x')" ontouchstart="changeValue(+1, 'x')">+</button>
+						</div>
+						<h2>Y size</h2>
+						<div style="margin-left: 20px">
+							<button onclick="changeValue(-1, 'y')" ontouchstart="changeValue(-1, 'y')">-</button>
+							<h3 id="y_label">3</h3>
+							<button onclick="changeValue(+1, 'y')" ontouchstart="changeValue(+1, 'y')">+</button>
+						</div>
+						<h2>Z size</h2>
+						<div style="margin-left: 20px">
+							<button onclick="changeValue(-1, 'z')" ontouchstart="changeValue(-1, 'z')">-</button>
+							<h3 id="z_label">3</h3>
+							<button onclick="changeValue(+1, 'z')" ontouchstart="changeValue(+1, 'z')">+</button>
+						</div>
+						<button id="button_new_cube" onclick="generateCube()" ontouchstart="generateCube()">Generate new cube!</button>
+				</div>
+			</div>
+		</div>	
+
+		<script src="js/main.js"></script>
+	</body>
+</html>
