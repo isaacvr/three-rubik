@@ -30,7 +30,7 @@ clockwise turns into counter-clockwise).
 
 ##Movement syntax
 For better geometric understanding and uniqueness, I'm not using traditional notation within the code but
-movement syntax is based on it. I have 3 variables to control movement, _movingType_, _layer_ and _inverted.
+movement syntax is based on it. I have 3 variables to control movement, _movingType_, _layer_ and _inverted_.
 
 _movingType_ can be _x_, _y_ or _z_, depending on the normal of the face. This way, 
 moving red or orange faces would be _x_ moves (which are respectively R and L moves),
