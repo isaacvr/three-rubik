@@ -110,5 +110,4 @@ function render(){
 	puzzle.animate();
 	stats.update();
 	renderer.render(scene, camera);
-	console.log("render");
 }

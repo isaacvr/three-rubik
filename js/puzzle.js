@@ -18,7 +18,7 @@ function puzzle(){
 	var directionMoving = {xCount: 0, yCount: 0, zCount: 0}; //"Statistic" method to determine direction done (DIRTY)
 	
 	var cubieMat = new THREE.MeshPhongMaterial({
-		map: THREE.ImageUtils.loadTexture('/rubik/img/stickers.png')
+		map: THREE.ImageUtils.loadTexture('img/stickers.png')
 	});
 		
 	var redText    = [new THREE.Vector2(0/2, 2/3), new THREE.Vector2(1/2, 2/3), new THREE.Vector2(1/2, 3/3), new THREE.Vector2(0/2, 3/3)];
