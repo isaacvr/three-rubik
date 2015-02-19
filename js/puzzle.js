@@ -21,6 +21,7 @@ function puzzle(){
 		map: THREE.ImageUtils.loadTexture('img/stickers.png')
 	});
 		
+	//Setting vectors for UV mapping
 	var redText    = [new THREE.Vector2(0/2, 2/3), new THREE.Vector2(1/2, 2/3), new THREE.Vector2(1/2, 3/3), new THREE.Vector2(0/2, 3/3)];
 	var orangeText = [new THREE.Vector2(1/2, 2/3), new THREE.Vector2(2/2, 2/3), new THREE.Vector2(2/2, 3/3), new THREE.Vector2(1/2, 3/3)];
 	var blueText   = [new THREE.Vector2(0/2, 1/3), new THREE.Vector2(1/2, 1/3), new THREE.Vector2(1/2, 2/3), new THREE.Vector2(0/2, 2/3)];
@@ -37,6 +38,7 @@ function puzzle(){
 		var cubieGeom;
 		
 		clickableCubies = [];
+		var maxDimension = getMaxDimension();
 		cubies = new Array(Y_DIMENS);
 		for(var y = 0; y < Y_DIMENS; y++){
 			cubies[y] = new Array(X_DIMENS);
@@ -117,44 +119,67 @@ function puzzle(){
 	//Method used for mouse released event
 	this.guessMovingFaceAndDirection = function(controls){
 		//Find cubie clicked coordinates in matrix
+		//Origin is in the middle of the puzzle so we sum half of it to clickStart coordinates
 		clickStart.add(new THREE.Vector3(X_DIMENS / 2 * VOXEL, Y_DIMENS / 2 * VOXEL, Z_DIMENS / 2 * VOXEL));
 		var x = Math.floor(Math.round(clickStart.x) / VOXEL);
 		var y = Math.floor(Math.round(clickStart.y) / VOXEL);
 		var z = Math.floor(Math.round(clickStart.z) / VOXEL);
 			
 		//Find face clicked
-		var face;
+		/*
+		Because we are clicking on surface, x,y,z are going to be either max value or 0
+		In case it max value, then we substract one to avoid overflows
+		If it's 0 it can be problematic with L,B,D faces because intersecting pieces can be
+		confused (yellow-orange edge, for instance, if x is less than z, means we are clicking
+		in the orange face to move the yellow one)
+		*/
+		var faceClicked;
+		//Red face
 		if(x === X_DIMENS){
-			face = 'x';
+			faceClicked = 'x';
 			x--;
-		}else if(y === Y_DIMENS){
-			face = 'y';
+		}
+		//Blue face
+		else if(y === Y_DIMENS){
+			faceClicked = 'y';
 			y--;
-		}else if(z === Z_DIMENS){
-			face = 'z';
+		}
+		//White face
+		else if(z === Z_DIMENS){
+			faceClicked = 'z';
 			z--;
-		}else if(x === 0 && y === 0 && z === 0){
+		}
+		//Yellow-orange-green corner
+		else if(x === 0 && y === 0 && z === 0){
 			var minVal = Math.min(Math.min(Math.abs(clickStart.x), Math.abs(clickStart.y)), Math.abs(clickStart.z));		
 				if(minVal === Math.abs(clickStart.x))
-					face = 'x';
+					faceClicked = 'x';
 				else if(minVal === Math.abs(clickStart.y))
-					face = 'y';
+					faceClicked = 'y';
 				else if(minVal === Math.abs(clickStart.z))
-					face = 'z';
+					faceClicked = 'z';
 		}
+		//Yellow-green edge
 		else if(z === 0 && y === 0)
-			face = (clickStart.z < clickStart.y) ? 'z' : 'y';
+			faceClicked = (clickStart.z < clickStart.y) ? 'z' : 'y';
+		//Orange-green yellow
 		else if(x === 0 && y === 0)
-			face = (clickStart.x < clickStart.y) ? 'x' : 'y';
+			faceClicked = (clickStart.x < clickStart.y) ? 'x' : 'y';
+		//Yellow-orange edge
 		else if(x === 0 && z === 0)
-			face = (clickStart.x < clickStart.z) ? 'x' : 'z';
+			faceClicked = (clickStart.x < clickStart.z) ? 'x' : 'z';
+		//Orange face
 		else if(x === 0)
-			face = 'x';
+			faceClicked = 'x';
+		//Green face
 		else if(y === 0)
-			face = 'y';
+			faceClicked = 'y';
+		//Yellow face
 		else if(z === 0)
-			face = 'z';		
+			faceClicked = 'z';		
+		
 		//Find face to move
+		//We find the highest value in directionMoving and it's sign
 		var direction = Math.max(Math.max(Math.abs(directionMoving.xCount), Math.abs(directionMoving.yCount)), Math.abs(directionMoving.zCount));		
 		if(direction === Math.abs(directionMoving.xCount))
 			direction = (Math.abs(directionMoving.xCount) / directionMoving.xCount > 0) ? '+x' : '-x';
@@ -163,19 +188,22 @@ function puzzle(){
 		else if(direction === Math.abs(directionMoving.zCount))
 			direction = (Math.abs(directionMoving.zCount) / directionMoving.zCount > 0) ? '+z' : '-z';
 		var faceToMove;
-		if(face === 'x' && direction.indexOf('y') !== -1)
+		//If we click in any x face and move the mouse in the y direction, we want to move a face in z
+		//TBD this has to be done with vectors, somehow
+		if(faceClicked === 'x' && direction.indexOf('y') !== -1)
 			faceToMove = 'z';
-		else if(face === 'x' && direction.indexOf('z') !== -1)
+		else if(faceClicked === 'x' && direction.indexOf('z') !== -1)
 			faceToMove = 'y';
-		else if(face === 'y' && direction.indexOf('x') !== -1)
+		else if(faceClicked === 'y' && direction.indexOf('x') !== -1)
 			faceToMove = 'z';
-		else if(face === 'y' && direction.indexOf('z') !== -1)
+		else if(faceClicked === 'y' && direction.indexOf('z') !== -1)
 			faceToMove = 'x';	
-		else if(face === 'z' && direction.indexOf('y') !== -1)
+		else if(faceClicked === 'z' && direction.indexOf('y') !== -1)
 			faceToMove = 'x';
-		else if(face === 'z' && direction.indexOf('x') !== -1)
+		else if(faceClicked === 'z' && direction.indexOf('x') !== -1)
 			faceToMove = 'y';
 			
+		//Find the layer
 		var layer;
 		switch(faceToMove){
 			case 'x':
@@ -192,7 +220,7 @@ function puzzle(){
 		//Find rotation direction
 		var inverted;
 		if(faceToMove === 'x'){
-			if(face === 'z'){
+			if(faceClicked === 'z'){
 				if(z === Z_DIMENS - 1)
 					inverted = direction.indexOf('+') !== -1;
 				else
@@ -204,7 +232,7 @@ function puzzle(){
 					inverted = direction.indexOf('+') !== -1;
 			}
 		}else if(faceToMove === 'y'){
-			if(face === 'x'){
+			if(faceClicked === 'x'){
 				if(x === X_DIMENS - 1)
 					inverted = direction.indexOf('+') !== -1;
 				else
@@ -216,7 +244,7 @@ function puzzle(){
 					inverted = direction.indexOf('+') !== -1;
 			}
 		}else if(faceToMove === 'z'){
-			if(face === 'y'){
+			if(faceClicked === 'y'){
 				if(y === Y_DIMENS - 1)
 					inverted = direction.indexOf('+') !== -1;
 				else
@@ -397,8 +425,13 @@ function puzzle(){
 		return result;
 	}
 	
+	//Used to find surface cubies so inner ones are not rendered
 	function insideCube(x, y, z){
 		return !(x == 0 || (x == X_DIMENS - 1) || y == 0 || (y == Y_DIMENS - 1) || z == 0 || z == (Z_DIMENS - 1));
+	}
+	
+	function getMaxDimension(){
+		return Math.max(X_DIMENS, Math.max(Y_DIMENS, Z_DIMENS));
 	}
 	
 	// Rotate an object around an arbitrary axis in world space   
