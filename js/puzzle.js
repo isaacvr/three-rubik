@@ -1,14 +1,17 @@
 function puzzle(){
 	//CONSTANTS
 	VOXEL = 2;
-	X_DIMENS = 3;
+	X_DIMENS = 2;
 	Y_DIMENS = 3;
-	Z_DIMENS = 3;
+	Z_DIMENS = 4;
 	var pivotCenter = new THREE.Vector3(0, 0, 0);
 		
 	this.userMovingFace = false; //To prevent moving the cube while trying to move a face
 
-	var cubies; //Array with 3DObjects translated from pivot point (center of puzzle)
+	var cubies; //Array with Object3Ds translated from pivot point (center of puzzle)
+	var meshToCubiesMap; //Map using cubie mesh uuid as key and Object3D as values
+	var cubiesMap; //Map using cubie uuid as key and Object3D as value
+	var normalizedCubiesToCoordsMap; //Map using cubie uuid as key and Vector3 as value to represent normalized coordinates.
 	var clickableCubies; //Array with meshes for raycaster
 	var cubiesMoving = []; //Array with cubies actually moving
 	var angleSteps = 13, actualStep, angleDelta; //Params for moving animation; TBD remove magical number, calculate according to size
@@ -38,7 +41,9 @@ function puzzle(){
 		var cubieGeom;
 		
 		clickableCubies = [];
-		var maxDimension = getMaxDimension();
+		meshToCubiesMap = [];
+		cubiesMap = [];
+		normalizedCubiesToCoordsMap = [];
 		cubies = new Array(Y_DIMENS);
 		for(var y = 0; y < Y_DIMENS; y++){
 			cubies[y] = new Array(X_DIMENS);
@@ -68,12 +73,16 @@ function puzzle(){
 						(z - Z_DIMENS / 2) * VOXEL + 1/2 * VOXEL
 					);
 					//cubie.name = y + " " + x + " " + z;					
-					clickableCubies.push(cubie);
+					clickableCubies.push(cubie);					
 					var cubiePivot = new THREE.Object3D();
 					cubiePivot.add(cubie);
 					cubiePivot.position.set(pivotCenter.x, pivotCenter.y, pivotCenter.z);
 					//cubiePivot.name = y + " " + x + " " + z;
 					cubies[y][x][z] = cubiePivot;
+					cubiesMap[cubiePivot.uuid] = cubiePivot;
+					meshToCubiesMap[cubie.uuid] = cubiePivot;
+					//In a 3x3x3, center will be (0, 0, 0), blue center (0, 1, 0), etc.
+					normalizedCubiesToCoordsMap[cubiePivot.uuid] = new THREE.Vector3(x - X_DIMENS / 2 + 1/2, y - Y_DIMENS / 2 + 1/2, z - Z_DIMENS / 2 + 1/2);			
 					if(insideCube(x, y, z))
 						continue;
 					scene.add(cubiePivot);
@@ -286,6 +295,39 @@ function puzzle(){
 		updateMatrix(layer, inverted);
 	}
 	
+	this.moveCuboid = function(type, layer, inverted){
+		cubiesMoving.length = 0;
+		
+		Object.keys(normalizedCubiesToCoordsMap).forEach(
+			function(key){
+				//console.log(normalizedCubiesToCoordsMap[key]);
+				switch(type){
+					case 'x':
+						if((normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2) === layer)
+							cubiesMoving.push(cubiesMap[key]);
+						break;
+					case 'y':
+						if((normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2) === layer)
+							cubiesMoving.push(cubiesMap[key]);
+						break;
+					case 'z':
+						if((normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2) === layer)
+							cubiesMoving.push(cubiesMap[key]);
+						break;
+				}				
+			});	
+		/*
+		cubiesMoving.forEach(function(e){
+			console.log(normalizedCubiesToCoordsMap[e.uuid]); 			
+		});
+		console.log(cubiesMoving.length);
+		*/
+		angleDelta = ((inverted) ? -1 : 1) * Math.PI / 2 / angleSteps;
+		actualStep--;
+		
+		movingType = type;
+	}
+	
 	this.animate = function(){
 		if(actualStep === angleSteps)
 			return;
@@ -428,10 +470,6 @@ function puzzle(){
 	//Used to find surface cubies so inner ones are not rendered
 	function insideCube(x, y, z){
 		return !(x == 0 || (x == X_DIMENS - 1) || y == 0 || (y == Y_DIMENS - 1) || z == 0 || z == (Z_DIMENS - 1));
-	}
-	
-	function getMaxDimension(){
-		return Math.max(X_DIMENS, Math.max(Y_DIMENS, Z_DIMENS));
 	}
 	
 	// Rotate an object around an arbitrary axis in world space   

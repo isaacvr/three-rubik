@@ -15,10 +15,7 @@
 			
 			function changeValue(value, axis){
 				var oldValue = parseInt(document.getElementById(axis + "_label").innerText);
-				//document.getElementById(axis + "_label").innerText = Math.max(oldValue + value, 1);
-				document.getElementById("x_label").innerText = Math.max(oldValue + value, 1);
-				document.getElementById("y_label").innerText = Math.max(oldValue + value, 1);
-				document.getElementById("z_label").innerText = Math.max(oldValue + value, 1);
+				document.getElementById(axis + "_label").innerText = Math.max(oldValue + value, 1);
 			}
 			
 			function generateCube(){
