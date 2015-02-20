@@ -326,6 +326,21 @@ function puzzle(){
 		actualStep--;
 		
 		movingType = type;
+		
+		var normal;
+		switch(type){
+			case 'x':
+				normal = new THREE.Vector3(1, 0, 0);
+				break;
+			case 'y':
+				normal = new THREE.Vector3(0, 1, 0);
+				break;
+			case 'z':				
+				normal = new THREE.Vector3(0, 0, 1);
+				break;
+		}		
+		
+		updateNormalizedCoords(normal, inverted);
 	}
 	
 	this.animate = function(){
@@ -397,6 +412,32 @@ function puzzle(){
 			Y_DIMENS = y;
 		if(z)
 			Z_DIMENS = z;
+	}
+	
+	//Applies 90 degree turn to coords
+	/*
+	If we want to make a turn in x, x component stays the same and y and z are turned 90 degrees.
+	a stores value of x component
+	b stores cross product with normal
+	New value of coord is (old x normal + old.x) in case move is inverted and (old x -normal + old.x) if not
+	*/
+	function updateNormalizedCoords(normal, inverted){
+		cubiesMoving.forEach(function(e){
+			var old = normalizedCubiesToCoordsMap[e.uuid];
+			var a = new THREE.Vector3();
+			a.multiplyVectors(old, normal);
+			var b = new THREE.Vector3();
+			b.crossVectors(old, normal);
+			if(!inverted)
+				b.negate();
+			normalizedCubiesToCoordsMap[e.uuid].addVectors(a, b);
+		});
+		/*
+		cubiesMoving.forEach(function(e){
+			console.log(normalizedCubiesToCoordsMap[e.uuid]); 			
+		});
+		console.log(cubiesMoving.length);
+		*/
 	}
 	
 	function updateMatrix(layer, inverted){
