@@ -8,17 +8,17 @@ function puzzle(){
 		
 	this.userMovingFace = false; //To prevent moving the cube while trying to move a face
 
-	var cubies; //Array with Object3Ds translated from pivot point (center of puzzle)
-	var meshToCubiesMap; //Map using cubie mesh uuid as key and Object3D as values
-	var cubiesMap; //Map using cubie uuid as key and Object3D as value
+	var meshToCubiesMap; //Map using cubie mesh uuid as key and cubie as values
+	var cubiesMap; //Map using cubie uuid as key and cubie as value
 	var normalizedCubiesToCoordsMap; //Map using cubie uuid as key and Vector3 as value to represent normalized coordinates.
 	var clickableCubies; //Array with meshes for raycaster
 	var cubiesMoving = []; //Array with cubies actually moving
 	var angleSteps = 13, actualStep, angleDelta; //Params for moving animation; TBD remove magical number, calculate according to size
 	var movingType; //Which face we are moving. The value indicates face's normal
 	var scrambling, scramblingIndex = 0;	
-	var clickStart //Intersection point between raycaster and puzzle, used to detect which face was clicked
-	var directionMoving = {xCount: 0, yCount: 0, zCount: 0}; //"Statistic" method to determine direction done (DIRTY)
+	var clickStart; //Intersection point between raycaster and puzzle, used to detect which face was clicked
+	var clickedCubie; //Stores clicked cubie to calculate movement
+	var directionMoving = {xCount: 0, yCount: 0, zCount: 0}; //"Statistic" method to determine direction done (TBD better)
 	
 	var cubieMat = new THREE.MeshPhongMaterial({
 		map: THREE.ImageUtils.loadTexture('img/stickers.png')
@@ -44,11 +44,8 @@ function puzzle(){
 		meshToCubiesMap = [];
 		cubiesMap = [];
 		normalizedCubiesToCoordsMap = [];
-		cubies = new Array(Y_DIMENS);
 		for(var y = 0; y < Y_DIMENS; y++){
-			cubies[y] = new Array(X_DIMENS);
 			for(var x = 0; x < X_DIMENS; x++){
-				cubies[y][x] = new Array(Z_DIMENS);
 				for(var z = 0; z < Z_DIMENS; z++){					
 					cubieGeom = new THREE.BoxGeometry(VOXEL, VOXEL, VOXEL);
 					
@@ -66,19 +63,18 @@ function puzzle(){
 					cubieGeom.faceVertexUvs[0][10] = (z == 0) 			 ? [whiteText[0],  whiteText[1],  whiteText[3]]  : [blackText, blackText, blackText];
 					cubieGeom.faceVertexUvs[0][11] = (z == 0) 			 ? [whiteText[1],  whiteText[2],  whiteText[3]]  : [blackText, blackText, blackText];
 									
+					//Mesh if offsetted to its position and then added to an Object3D placed in the center
+					//This way, when we rotate Object3D, we pivot meshes around center
 					var cubie = new THREE.Mesh(cubieGeom, cubieMat);
 					cubie.position.set(
 						(x - X_DIMENS / 2) * VOXEL + 1/2 * VOXEL, 
 						(y - Y_DIMENS / 2) * VOXEL + 1/2 * VOXEL, 
 						(z - Z_DIMENS / 2) * VOXEL + 1/2 * VOXEL
-					);
-					//cubie.name = y + " " + x + " " + z;					
+					);				
 					clickableCubies.push(cubie);					
 					var cubiePivot = new THREE.Object3D();
 					cubiePivot.add(cubie);
 					cubiePivot.position.set(pivotCenter.x, pivotCenter.y, pivotCenter.z);
-					//cubiePivot.name = y + " " + x + " " + z;
-					cubies[y][x][z] = cubiePivot;
 					cubiesMap[cubiePivot.uuid] = cubiePivot;
 					meshToCubiesMap[cubie.uuid] = cubiePivot;
 					//In a 3x3x3, center will be (0, 0, 0), blue center (0, 1, 0), etc.
@@ -104,6 +100,7 @@ function puzzle(){
 			this.userMovingFace = true;
 			controls.enabled = false;
 			clickStart = intersects[0].point;
+			clickedCubie = meshToCubiesMap[intersects[0].object.uuid];
 		}		
 	}
 	
@@ -113,7 +110,7 @@ function puzzle(){
 		if (intersects.length) {
 			intersects[0].point.sub(clickStart);
 			if(intersects[0].point.length() >= 1){
-				//Detect direction turn
+				//Detect direction turning
 				var maxVal = Math.max(Math.max(Math.abs(intersects[0].point.x), Math.abs(intersects[0].point.y)), Math.abs(intersects[0].point.z));		
 				if(maxVal === Math.abs(intersects[0].point.x))
 					directionMoving.xCount += 1 * intersects[0].point.x;
@@ -127,172 +124,67 @@ function puzzle(){
 	
 	//Method used for mouse released event
 	this.guessMovingFaceAndDirection = function(controls){
-		//Find cubie clicked coordinates in matrix
-		//Origin is in the middle of the puzzle so we sum half of it to clickStart coordinates
-		clickStart.add(new THREE.Vector3(X_DIMENS / 2 * VOXEL, Y_DIMENS / 2 * VOXEL, Z_DIMENS / 2 * VOXEL));
-		var x = Math.floor(Math.round(clickStart.x) / VOXEL);
-		var y = Math.floor(Math.round(clickStart.y) / VOXEL);
-		var z = Math.floor(Math.round(clickStart.z) / VOXEL);
-			
-		//Find face clicked
-		/*
-		Because we are clicking on surface, x,y,z are going to be either max value or 0
-		In case it max value, then we substract one to avoid overflows
-		If it's 0 it can be problematic with L,B,D faces because intersecting pieces can be
-		confused (yellow-orange edge, for instance, if x is less than z, means we are clicking
-		in the orange face to move the yellow one)
-		*/
-		var faceClicked;
-		//Red face
-		if(x === X_DIMENS){
-			faceClicked = 'x';
-			x--;
-		}
-		//Blue face
-		else if(y === Y_DIMENS){
-			faceClicked = 'y';
-			y--;
-		}
-		//White face
-		else if(z === Z_DIMENS){
-			faceClicked = 'z';
-			z--;
-		}
-		//Yellow-orange-green corner
-		else if(x === 0 && y === 0 && z === 0){
-			var minVal = Math.min(Math.min(Math.abs(clickStart.x), Math.abs(clickStart.y)), Math.abs(clickStart.z));		
-				if(minVal === Math.abs(clickStart.x))
-					faceClicked = 'x';
-				else if(minVal === Math.abs(clickStart.y))
-					faceClicked = 'y';
-				else if(minVal === Math.abs(clickStart.z))
-					faceClicked = 'z';
-		}
-		//Yellow-green edge
-		else if(z === 0 && y === 0)
-			faceClicked = (clickStart.z < clickStart.y) ? 'z' : 'y';
-		//Orange-green yellow
-		else if(x === 0 && y === 0)
-			faceClicked = (clickStart.x < clickStart.y) ? 'x' : 'y';
-		//Yellow-orange edge
-		else if(x === 0 && z === 0)
-			faceClicked = (clickStart.x < clickStart.z) ? 'x' : 'z';
-		//Orange face
-		else if(x === 0)
-			faceClicked = 'x';
-		//Green face
-		else if(y === 0)
-			faceClicked = 'y';
-		//Yellow face
-		else if(z === 0)
-			faceClicked = 'z';		
+		//We unnormalize cubie's center coordinates
+		var cubieCenter = normalizedCubiesToCoordsMap[clickedCubie.uuid].clone();
+		cubieCenter.multiplyScalar(VOXEL);
 		
+		//We can know the face that was clicked because it'll be the corresponding to the biggest component of distance vector between center and point clicked
+		var x = clickStart.x - cubieCenter.x;
+		var y = clickStart.y - cubieCenter.y;
+		var z = clickStart.z - cubieCenter.z;
+		
+		//faceClicked will be the normal vector of the face clicked
+		var faceClicked;
+		var max = Math.max(Math.max(Math.abs(x), Math.abs(y)), Math.abs(z));
+		if(max === Math.abs(x))
+			faceClicked = new THREE.Vector3(Math.abs(x) / x, 0, 0);
+		else if(max === Math.abs(y))
+			faceClicked = new THREE.Vector3(0, Math.abs(y) / y, 0);
+		else
+			faceClicked = new THREE.Vector3(0, 0, Math.abs(z) / z);
+
 		//Find face to move
 		//We find the highest value in directionMoving and it's sign
 		var direction = Math.max(Math.max(Math.abs(directionMoving.xCount), Math.abs(directionMoving.yCount)), Math.abs(directionMoving.zCount));		
 		if(direction === Math.abs(directionMoving.xCount))
-			direction = (Math.abs(directionMoving.xCount) / directionMoving.xCount > 0) ? '+x' : '-x';
+			direction = (Math.abs(directionMoving.xCount) / directionMoving.xCount > 0) ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(-1, 0, 0);
 		else if(direction === Math.abs(directionMoving.yCount))
-			direction = (Math.abs(directionMoving.yCount) / directionMoving.yCount > 0) ? '+y' : '-y';
+		direction = (Math.abs(directionMoving.yCount) / directionMoving.yCount > 0) ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, -1, 0);
 		else if(direction === Math.abs(directionMoving.zCount))
-			direction = (Math.abs(directionMoving.zCount) / directionMoving.zCount > 0) ? '+z' : '-z';
-		var faceToMove;
-		//If we click in any x face and move the mouse in the y direction, we want to move a face in z
-		//TBD this has to be done with vectors, somehow
-		if(faceClicked === 'x' && direction.indexOf('y') !== -1)
-			faceToMove = 'z';
-		else if(faceClicked === 'x' && direction.indexOf('z') !== -1)
-			faceToMove = 'y';
-		else if(faceClicked === 'y' && direction.indexOf('x') !== -1)
-			faceToMove = 'z';
-		else if(faceClicked === 'y' && direction.indexOf('z') !== -1)
-			faceToMove = 'x';	
-		else if(faceClicked === 'z' && direction.indexOf('y') !== -1)
-			faceToMove = 'x';
-		else if(faceClicked === 'z' && direction.indexOf('x') !== -1)
-			faceToMove = 'y';
-			
+			direction = (Math.abs(directionMoving.zCount) / directionMoving.zCount > 0) ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 0, -1);
+		
+		//The face we are trying to move is the perpendicular to the one we clicked and the direction we moved the mouse -> cross product
+		var faceToMove = new THREE.Vector3();
+		faceToMove.crossVectors(faceClicked, direction);
+		
 		//Find the layer
-		var layer;
-		switch(faceToMove){
-			case 'x':
-				layer = x;
-				break;
-			case 'y':
-				layer = y;
-				break;
-			case 'z':
-				layer = z;
-				break;
+		//faceToMove is a vector normal to the face we are moving, only one component should be different from 0 
+		var layer, type;
+		if(faceToMove.x !== 0){
+			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].x + X_DIMENS/2 - 1/2;
+			type = 'x';
+		}
+		else if(faceToMove.y !== 0){
+			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].y + Y_DIMENS/2 - 1/2;
+			type = 'y';
+		}
+		else if(faceToMove.z !== 0){
+			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].z + Z_DIMENS/2 - 1/2;
+			type = 'z';
 		}
 		
-		//Find rotation direction
-		var inverted;
-		if(faceToMove === 'x'){
-			if(faceClicked === 'z'){
-				if(z === Z_DIMENS - 1)
-					inverted = direction.indexOf('+') !== -1;
-				else
-					inverted = direction.indexOf('+') === -1;
-			}else{
-				if(y === Y_DIMENS - 1)
-					inverted = direction.indexOf('+') === -1;
-				else
-					inverted = direction.indexOf('+') !== -1;
-			}
-		}else if(faceToMove === 'y'){
-			if(faceClicked === 'x'){
-				if(x === X_DIMENS - 1)
-					inverted = direction.indexOf('+') !== -1;
-				else
-					inverted = direction.indexOf('+') === -1;
-			}else{
-				if(z === Z_DIMENS - 1)
-					inverted = direction.indexOf('+') === -1;
-				else
-					inverted = direction.indexOf('+') !== -1;
-			}
-		}else if(faceToMove === 'z'){
-			if(faceClicked === 'y'){
-				if(y === Y_DIMENS - 1)
-					inverted = direction.indexOf('+') !== -1;
-				else
-					inverted = direction.indexOf('+') === -1;
-			}else{
-				if(x === X_DIMENS - 1)
-					inverted = direction.indexOf('+') === -1;
-				else
-					inverted = direction.indexOf('+') !== -1;
-			}
-		}
+		//We want to know the sign of the not null component
+		var inverted = new THREE.Vector3(1, 1, 1);
+		inverted = inverted.dot(faceToMove) < 0;
 		
+		//Reset everything for next move
 		directionMoving = {xCount: 0, yCount: 0, zCount: 0}
 		controls.enabled = true;
-		this.userMovingFace = false;
-		this.move(faceToMove, layer, inverted);
-	}
-	
-	this.move = function(type, layer, inverted){
-		cubiesMoving.length = 0;
+		this.userMovingFace = false;	
 		
-		for(var y = 0; y < Y_DIMENS; y++){
-			if(type === 'y' && y !== layer)
-				continue;
-			for(var x = 0; x < X_DIMENS; x++){
-				if(type === 'x' && x !== layer)
-					continue;
-				for(var z = 0; z < Z_DIMENS; z++){
-					if(type === 'z' && z !== layer)
-						continue;
-					cubiesMoving.push(cubies[(type === 'y') ? layer : y][(type === 'x') ? layer : x][(type === 'z') ? layer : z]);
-				}
-			}
-		}
-		angleDelta = ((inverted) ? -1 : 1) * Math.PI / 2 / angleSteps;
-		actualStep--;
-		
-		movingType = type;
-		updateMatrix(layer, inverted);
+		//Sometimes faceToMove can be (0,0,0), we want to prevent it
+		if(faceToMove.length())
+			this.moveCuboid(type, layer, inverted);
 	}
 	
 	this.moveCuboid = function(type, layer, inverted){
@@ -385,7 +277,7 @@ function puzzle(){
 	this.scramble = function(){
 		scrambling = true;
 		var axis = ['x', 'y', 'z']
-		axis = axis[Math.floor(Math.random() * 3)];
+		axis = axis[Math.floor(Math.random() * 3)];				
 		var layer = Math.floor(Math.random() * ((axis === 'x') ? X_DIMENS : (axis === 'y') ? Y_DIMENS : Z_DIMENS));
 		var inverted = Math.floor(((Math.random() * 2) % 2 === 0));
 		scramblingIndex++;
@@ -393,7 +285,7 @@ function puzzle(){
 			scrambling = false;
 			scramblingIndex = 0;
 		}
-		this.move(axis, layer, inverted);
+		this.moveCuboid(axis, layer, inverted);
 	}
 	
 	this.isScrambling = function(){
@@ -440,83 +332,14 @@ function puzzle(){
 		*/
 	}
 	
-	function updateMatrix(layer, inverted){
-		if(movingType === 'x'){
-			//Extract face
-			var face = new Array(Y_DIMENS);
-			for(var y = 0; y < Y_DIMENS; y++){
-				face[y] = new Array(Z_DIMENS);
-				for(var z = 0; z < Z_DIMENS; z++){
-					face[y][z] = cubies[y][layer][z];
-				}
-			}
-			//Rotate
-			face = rotate(face, inverted);
-			//Push face
-			for(var y = 0; y < Y_DIMENS; y++){			
-				for(var z = 0; z < Z_DIMENS; z++){
-					cubies[y][layer][z] = face[y][z];
-				}
-			}
-		}else if(movingType === 'y'){
-			//Extract face
-			var face = new Array(X_DIMENS);
-			for(var x = 0; x < X_DIMENS; x++){
-				face[x] = new Array(Z_DIMENS);
-				for(var z = 0; z < Z_DIMENS; z++){
-					face[x][z] = cubies[layer][x][z];
-				}
-			}
-			//Rotate
-			face = rotate(face, !inverted);
-			//Push face
-			for(var x = 0; x < X_DIMENS; x++){			
-				for(var z = 0; z < Z_DIMENS; z++){
-					cubies[layer][x][z] = face[x][z];
-				}
-			}
-		}if(movingType === 'z'){
-			//Extract face
-			var face = new Array(Y_DIMENS);
-			for(var y = 0; y < Y_DIMENS; y++){
-				face[y] = new Array(X_DIMENS);
-				for(var x = 0; x < X_DIMENS; x++){
-					face[y][x] = cubies[y][x][layer];
-				}
-			}
-			//Rotate
-			face = rotate(face, !inverted);
-			//Push face
-			for(var y = 0; y < Y_DIMENS; y++){			
-				for(var x = 0; x < X_DIMENS; x++){
-					cubies[y][x][layer] = face[y][x];
-				}
-			}
-		}
-	}
-	
-	function rotate(matrix, inverted) {
-		var result = Array(matrix[0].length);
-		for (i=0; i<result.length; i++) {
-			result[i] = Array(matrix.length);
-		}
-		for (i=0; i<matrix.length; i++) {
-			for (j=0; j<matrix[0].length; j++) {
-				result[j][i] = ((inverted) ? matrix[matrix.length-i-1][j] : matrix[i][matrix[0].length-j-1]);
-		}
-		}
-		return result;
-	}
-	
 	//Used to find surface cubies so inner ones are not rendered
 	function insideCube(x, y, z){
 		return !(x == 0 || (x == X_DIMENS - 1) || y == 0 || (y == Y_DIMENS - 1) || z == 0 || z == (Z_DIMENS - 1));
 	}
 	
 	// Rotate an object around an arbitrary axis in world space   
-	var rotWorldMatrix;
 	function rotateAroundWorldAxis(object, axis, radians) {
-		rotWorldMatrix = new THREE.Matrix4();
+		var rotWorldMatrix = new THREE.Matrix4();
 		rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
 	
 		rotWorldMatrix.multiply(object.matrix); // pre-multiply

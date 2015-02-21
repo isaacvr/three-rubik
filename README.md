@@ -51,10 +51,10 @@ Transformation table for 3x3x3 cube:
 |F'  |      z     |   2   |no        |
 |B   |      z     |   0   |no        |
 |B'  |      z     |   0   |yes       |
-|U   |      y     |   2   |no        |
-|U'  |      y     |   2   |yes       |
-|D   |      y     |   0   |yes       |
-|D'  |      y     |   0   |no        |
+|U   |      y     |   2   |yes       |
+|U'  |      y     |   2   |no        |
+|D   |      y     |   0   |no        |
+|D'  |      y     |   0   |yes       |
 |R   |      x     |   2   |yes       |
 |R'  |      x     |   2   |no        |
 |L   |      x     |   0   |no        |
