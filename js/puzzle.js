@@ -160,62 +160,56 @@ function puzzle(){
 		
 		//Find the layer
 		//faceToMove is a vector normal to the face we are moving, only one component should be different from 0 
-		var layer, type;
-		if(faceToMove.x !== 0){
+		var layer;
+		if(faceToMove.x !== 0)
 			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].x + X_DIMENS/2 - 1/2;
-			type = 'x';
-		}
-		else if(faceToMove.y !== 0){
+		else if(faceToMove.y !== 0)
 			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].y + Y_DIMENS/2 - 1/2;
-			type = 'y';
-		}
-		else if(faceToMove.z !== 0){
+		else if(faceToMove.z !== 0)
 			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].z + Z_DIMENS/2 - 1/2;
-			type = 'z';
-		}
 		
 		//We want to know the sign of the not null component
 		var inverted = new THREE.Vector3(1, 1, 1);
 		inverted = inverted.dot(faceToMove) < 0;
+		if(inverted)
+			faceToMove.negate();
 		
 		//Reset everything for next move
 		directionMoving = new THREE.Vector3();
 		controls.enabled = true;
-		this.userMovingFace = false;	
+		this.userMovingFace = false;
 		
 		//Sometimes faceToMove can be (0,0,0), we want to prevent it
 		if(faceToMove.length())
-			this.moveCuboid(type, layer, inverted);
+			this.moveCuboid(faceToMove, layer, inverted);
 	}
 	
-	this.moveCuboid = function(type, layer, inverted){
+	this.moveCuboid = function(normal, layer, inverted){
 		cubiesMoving.length = 0;
 		var layersColliding = false;
 		
 		Object.keys(normalizedCubiesToCoordsMap).forEach(
 			function(key){
-				//console.log(normalizedCubiesToCoordsMap[key]);
-				switch(type){
-					case 'x':
-						if((normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2) === layer)
-							cubiesMoving.push(cubiesMap[key]);
-						//All cubies in same layer should be separated by 1 unit
-						//If we have half, it means we turned an even layer to an odd one or viceversa
-						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2)) === 0.5)
-							layersColliding = true;
-						break;
-					case 'y':
-						if((normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2) === layer)
-							cubiesMoving.push(cubiesMap[key]);
-						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2)) === 0.5)
-							layersColliding = true;
-						break;
-					case 'z':
-						if((normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2) === layer)
-							cubiesMoving.push(cubiesMap[key]);
-						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2)) === 0.5)
-							layersColliding = true;
-						break;
+				//console.log(normalizedCubiesToCoordsMap[key]);				
+				if(normal.x !== 0){
+					if((normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2) === layer)
+						cubiesMoving.push(cubiesMap[key]);
+					//All cubies in same layer should be separated by 1 unit
+					//If we have half, it means we turned an even layer to an odd one or viceversa
+					if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2)) === 0.5)
+						layersColliding = true;
+				}
+				else if(normal.y !== 0){
+					if((normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2) === layer)
+						cubiesMoving.push(cubiesMap[key]);
+					if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2)) === 0.5)
+						layersColliding = true;
+				}
+				else if(normal.z !== 0){
+					if((normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2) === layer)
+						cubiesMoving.push(cubiesMap[key]);
+					if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2)) === 0.5)
+						layersColliding = true;
 				}
 			});	
 		/*
@@ -225,7 +219,7 @@ function puzzle(){
 		console.log(cubiesMoving.length);
 		*/
 		angleDelta = ((inverted) ? -1 : 1) * Math.PI / 2 / angleSteps;
-		movingType = type;
+		movingType = normal;
 		
 		if(layersColliding){
 			actualStep = 1;
@@ -233,19 +227,6 @@ function puzzle(){
 		}
 		else
 			actualStep--;		
-		
-		var normal;
-		switch(type){
-			case 'x':
-				normal = new THREE.Vector3(1, 0, 0);
-				break;
-			case 'y':
-				normal = new THREE.Vector3(0, 1, 0);
-				break;
-			case 'z':				
-				normal = new THREE.Vector3(0, 0, 1);
-				break;
-		}		
 		
 		updateNormalizedCoords(normal, inverted);
 	}
@@ -255,30 +236,15 @@ function puzzle(){
 			return;
 		actualStep--;
 		var doNextMove = false;
-		cubiesMoving.forEach(function(c){
-			switch(movingType){
-				case 'x':
-					rotateAroundWorldAxis(c, new THREE.Vector3(1, 0, 0), angleDelta);
-					break;
-				case 'y':
-					rotateAroundWorldAxis(c, new THREE.Vector3(0, 1, 0), angleDelta);
-					break;
-				case 'z':
-					rotateAroundWorldAxis(c, new THREE.Vector3(0, 0, 1), angleDelta);
-					break;
-			}
-			if(actualStep < 0){
-				switch(movingType){
-					case 'x':
-						c.rotation.x = Math.round(c.rotation.x / Math.PI * 2) * Math.PI / 2;
-						break;
-					case 'y':
-						c.rotation.y = Math.round(c.rotation.y / Math.PI * 2) * Math.PI / 2;
-						break;
-					case 'z':
-						c.rotation.z = Math.round(c.rotation.z / Math.PI * 2) * Math.PI / 2;
-						break;
-				}				
+		cubiesMoving.forEach(function(c){			
+			rotateAroundWorldAxis(c, movingType, angleDelta);
+			if(actualStep < 0){				
+				if(movingType.x !== 0)
+					c.rotation.x = Math.round(c.rotation.x / Math.PI * 2) * Math.PI / 2;
+				else if(movingType.y !== 0)
+					c.rotation.y = Math.round(c.rotation.y / Math.PI * 2) * Math.PI / 2;
+				else if(movingType.z !== 0)
+					c.rotation.z = Math.round(c.rotation.z / Math.PI * 2) * Math.PI / 2;
 				doNextMove = true;
 			}
 		});
@@ -300,7 +266,7 @@ function puzzle(){
 			scrambling = false;
 			scramblingIndex = 0;
 		}
-		this.moveCuboid(axis, layer, inverted);
+		//this.moveCuboid(axis, layer, inverted);
 	}
 	
 	this.isScrambling = function(){
