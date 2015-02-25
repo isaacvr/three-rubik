@@ -189,6 +189,7 @@ function puzzle(){
 	
 	this.moveCuboid = function(type, layer, inverted){
 		cubiesMoving.length = 0;
+		var layersColliding = false;
 		
 		Object.keys(normalizedCubiesToCoordsMap).forEach(
 			function(key){
@@ -197,16 +198,22 @@ function puzzle(){
 					case 'x':
 						if((normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2) === layer)
 							cubiesMoving.push(cubiesMap[key]);
+						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2)) === 0.5)
+							layersColliding = true;
 						break;
 					case 'y':
 						if((normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2) === layer)
 							cubiesMoving.push(cubiesMap[key]);
+						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2)) === 0.5)
+							layersColliding = true;
 						break;
 					case 'z':
 						if((normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2) === layer)
 							cubiesMoving.push(cubiesMap[key]);
+						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2)) === 0.5)
+							layersColliding = true;
 						break;
-				}				
+				}
 			});	
 		/*
 		cubiesMoving.forEach(function(e){
@@ -215,9 +222,14 @@ function puzzle(){
 		console.log(cubiesMoving.length);
 		*/
 		angleDelta = ((inverted) ? -1 : 1) * Math.PI / 2 / angleSteps;
-		actualStep--;
-		
 		movingType = type;
+		
+		if(layersColliding){
+			actualStep = 1;
+			return;
+		}
+		else
+			actualStep--;		
 		
 		var normal;
 		switch(type){
@@ -263,12 +275,12 @@ function puzzle(){
 					case 'z':
 						c.rotation.z = Math.round(c.rotation.z / Math.PI * 2) * Math.PI / 2;
 						break;
-				}
-				actualStep = angleSteps;
+				}				
 				doNextMove = true;
 			}
 		});
 		if(doNextMove){
+			actualStep = angleSteps;
 			if(scrambling)
 				this.scramble();
 		}
