@@ -18,7 +18,7 @@ function puzzle(){
 	var scrambling, scramblingIndex = 0;	
 	var clickStart; //Intersection point between raycaster and puzzle, used to detect which face was clicked
 	var clickedCubie; //Stores clicked cubie to calculate movement
-	var directionMoving = {xCount: 0, yCount: 0, zCount: 0}; //"Statistic" method to determine direction done (TBD better)
+	var directionMoving; //Vector describing mouse's move while pressed
 	
 	var cubieMat = new THREE.MeshPhongMaterial({
 		map: THREE.ImageUtils.loadTexture('img/stickers.png')
@@ -89,6 +89,7 @@ function puzzle(){
 		actualStep = angleSteps;
 		scrambling = false;
 		scramblingIndex = 0;
+		directionMoving = new THREE.Vector3();
 	}
 	
 	//Method used for mouse pressed event
@@ -113,11 +114,11 @@ function puzzle(){
 				//Detect direction turning
 				var maxVal = Math.max(Math.max(Math.abs(intersects[0].point.x), Math.abs(intersects[0].point.y)), Math.abs(intersects[0].point.z));		
 				if(maxVal === Math.abs(intersects[0].point.x))
-					directionMoving.xCount += 1 * intersects[0].point.x;
+					directionMoving.x += intersects[0].point.x;
 				else if(maxVal === Math.abs(intersects[0].point.y))
-					directionMoving.yCount += 1 * intersects[0].point.y;
+					directionMoving.y += intersects[0].point.y;
 				else if(maxVal === Math.abs(intersects[0].point.z))
-					directionMoving.zCount += 1 * intersects[0].point.z;
+					directionMoving.z += intersects[0].point.z;
 			}
 		}
 	}
@@ -145,13 +146,13 @@ function puzzle(){
 
 		//Find face to move
 		//We find the highest value in directionMoving and it's sign
-		var direction = Math.max(Math.max(Math.abs(directionMoving.xCount), Math.abs(directionMoving.yCount)), Math.abs(directionMoving.zCount));		
-		if(direction === Math.abs(directionMoving.xCount))
-			direction = (Math.abs(directionMoving.xCount) / directionMoving.xCount > 0) ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(-1, 0, 0);
-		else if(direction === Math.abs(directionMoving.yCount))
-		direction = (Math.abs(directionMoving.yCount) / directionMoving.yCount > 0) ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, -1, 0);
-		else if(direction === Math.abs(directionMoving.zCount))
-			direction = (Math.abs(directionMoving.zCount) / directionMoving.zCount > 0) ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 0, -1);
+		var direction = Math.max(Math.max(Math.abs(directionMoving.x), Math.abs(directionMoving.y)), Math.abs(directionMoving.z));		
+		if(direction === Math.abs(directionMoving.x))
+			direction = new THREE.Vector3(Math.abs(directionMoving.x) / directionMoving.x, 0, 0);
+		else if(direction === Math.abs(directionMoving.y))
+			direction = new THREE.Vector3(0, Math.abs(directionMoving.y) / directionMoving.y, 0);
+		else if(direction === Math.abs(directionMoving.z))
+			direction = new THREE.Vector3(0, 0, Math.abs(directionMoving.z) / directionMoving.z);
 		
 		//The face we are trying to move is the perpendicular to the one we clicked and the direction we moved the mouse -> cross product
 		var faceToMove = new THREE.Vector3();
@@ -178,7 +179,7 @@ function puzzle(){
 		inverted = inverted.dot(faceToMove) < 0;
 		
 		//Reset everything for next move
-		directionMoving = {xCount: 0, yCount: 0, zCount: 0}
+		directionMoving = new THREE.Vector3();
 		controls.enabled = true;
 		this.userMovingFace = false;	
 		
@@ -198,6 +199,8 @@ function puzzle(){
 					case 'x':
 						if((normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2) === layer)
 							cubiesMoving.push(cubiesMap[key]);
+						//All cubies in same layer should be separated by 1 unit
+						//If we have half, it means we turned an even layer to an odd one or viceversa
 						if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2)) === 0.5)
 							layersColliding = true;
 						break;
