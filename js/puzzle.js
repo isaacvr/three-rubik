@@ -223,17 +223,20 @@ function puzzle(){
 	}
 	
 	this.scramble = function(){
+		if(!(DIMENS[0] === DIMENS[1] && DIMENS[1] === DIMENS[2]))
+			return;
 		scrambling = true;
-		var axis = ['x', 'y', 'z']
-		axis = axis[Math.floor(Math.random() * 3)];				
-		var layer = Math.floor(Math.random() * ((axis === 'x') ? DIMENS[0] : (axis === 'y') ? DIMENS[1] : DIMENS[2]));
+		var normal = new THREE.Vector3();
+		var index = Math.floor(Math.random() * 3);
+		normal.setComponent(index, 1);
+		var layer = Math.floor(Math.random() * DIMENS[index]);
 		var inverted = Math.floor(((Math.random() * 2) % 2 === 0));
 		scramblingIndex++;
-		if(scramblingIndex === 100){
+		if(scramblingIndex === 40){
 			scrambling = false;
 			scramblingIndex = 0;
 		}
-		//this.moveCuboid(axis, layer, inverted);
+		this.moveCuboid(normal, layer, inverted);
 	}
 	
 	this.isScrambling = function(){
