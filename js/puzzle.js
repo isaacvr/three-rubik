@@ -4,6 +4,7 @@ function puzzle(){
 	X_DIMENS = 2;
 	Y_DIMENS = 3;
 	Z_DIMENS = 4;
+	DIMENS = [2, 3, 4];
 	var pivotCenter = new THREE.Vector3(0, 0, 0);
 		
 	this.userMovingFace = false; //To prevent moving the cube while trying to move a face
@@ -63,7 +64,7 @@ function puzzle(){
 					cubieGeom.faceVertexUvs[0][10] = (z == 0) 			 ? [whiteText[0],  whiteText[1],  whiteText[3]]  : [blackText, blackText, blackText];
 					cubieGeom.faceVertexUvs[0][11] = (z == 0) 			 ? [whiteText[1],  whiteText[2],  whiteText[3]]  : [blackText, blackText, blackText];
 									
-					//Mesh if offsetted to its position and then added to an Object3D placed in the center
+					//Mesh is offsetted to its position and then added to an Object3D placed in the center
 					//This way, when we rotate Object3D, we pivot meshes around center
 					var cubie = new THREE.Mesh(cubieGeom, cubieMat);
 					cubie.position.set(
@@ -112,62 +113,44 @@ function puzzle(){
 			intersects[0].point.sub(clickStart);
 			if(intersects[0].point.length() >= 1){
 				//Detect direction turning
-				var maxVal = Math.max(Math.max(Math.abs(intersects[0].point.x), Math.abs(intersects[0].point.y)), Math.abs(intersects[0].point.z));		
-				if(maxVal === Math.abs(intersects[0].point.x))
-					directionMoving.x += intersects[0].point.x;
-				else if(maxVal === Math.abs(intersects[0].point.y))
-					directionMoving.y += intersects[0].point.y;
-				else if(maxVal === Math.abs(intersects[0].point.z))
-					directionMoving.z += intersects[0].point.z;
+				var index = getMaximum(intersects[0].point);
+				directionMoving.setComponent(index, directionMoving.getComponent(index) + intersects[0].point.getComponent(index));
 			}
 		}
 	}
 	
 	//Method used for mouse released event
 	this.guessMovingFaceAndDirection = function(controls){
-		//We unnormalize cubie's center coordinates
+		//We "unnormalize" cubie's center coordinates
 		var cubieCenter = normalizedCubiesToCoordsMap[clickedCubie.uuid].clone();
 		cubieCenter.multiplyScalar(VOXEL);
 		
 		//We can know the face that was clicked because it'll be the corresponding to the biggest component of distance vector between center and point clicked
-		var x = clickStart.x - cubieCenter.x;
-		var y = clickStart.y - cubieCenter.y;
-		var z = clickStart.z - cubieCenter.z;
+		var distance = new THREE.Vector3();
+		distance.subVectors(clickStart, cubieCenter);
 		
 		//faceClicked will be the normal vector of the face clicked
-		var faceClicked;
-		var max = Math.max(Math.max(Math.abs(x), Math.abs(y)), Math.abs(z));
-		if(max === Math.abs(x))
-			faceClicked = new THREE.Vector3(Math.abs(x) / x, 0, 0);
-		else if(max === Math.abs(y))
-			faceClicked = new THREE.Vector3(0, Math.abs(y) / y, 0);
-		else
-			faceClicked = new THREE.Vector3(0, 0, Math.abs(z) / z);
+		var index = getMaximum(distance);
+		var value = Math.abs(distance.getComponent(index)) / distance.getComponent(index);
+		var faceClicked = new THREE.Vector3();
+		faceClicked.setComponent(index, value);
 
 		//Find face to move
 		//We find the highest value in directionMoving and it's sign
-		var direction = Math.max(Math.max(Math.abs(directionMoving.x), Math.abs(directionMoving.y)), Math.abs(directionMoving.z));		
-		if(direction === Math.abs(directionMoving.x))
-			direction = new THREE.Vector3(Math.abs(directionMoving.x) / directionMoving.x, 0, 0);
-		else if(direction === Math.abs(directionMoving.y))
-			direction = new THREE.Vector3(0, Math.abs(directionMoving.y) / directionMoving.y, 0);
-		else if(direction === Math.abs(directionMoving.z))
-			direction = new THREE.Vector3(0, 0, Math.abs(directionMoving.z) / directionMoving.z);
-		
+		index = getMaximum(directionMoving);
+		value = Math.abs(directionMoving.getComponent(index)) / directionMoving.getComponent(index);
+		var direction = new THREE.Vector3();
+		direction.setComponent(index, value);
+
 		//The face we are trying to move is the perpendicular to the one we clicked and the direction we moved the mouse -> cross product
 		var faceToMove = new THREE.Vector3();
 		faceToMove.crossVectors(faceClicked, direction);
 		
 		//Find the layer
 		//faceToMove is a vector normal to the face we are moving, only one component should be different from 0 
-		var layer;
-		if(faceToMove.x !== 0)
-			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].x + X_DIMENS/2 - 1/2;
-		else if(faceToMove.y !== 0)
-			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].y + Y_DIMENS/2 - 1/2;
-		else if(faceToMove.z !== 0)
-			layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].z + Z_DIMENS/2 - 1/2;
-		
+		index = getMaximum(faceToMove);
+		var layer = normalizedCubiesToCoordsMap[clickedCubie.uuid].getComponent(index) + DIMENS[index]/2 - 1/2;
+
 		//We want to know the sign of the not null component
 		var inverted = new THREE.Vector3(1, 1, 1);
 		inverted = inverted.dot(faceToMove) < 0;
@@ -187,30 +170,17 @@ function puzzle(){
 	this.moveCuboid = function(normal, layer, inverted){
 		cubiesMoving.length = 0;
 		var layersColliding = false;
+		var index = getMaximum(normal);
 		
 		Object.keys(normalizedCubiesToCoordsMap).forEach(
 			function(key){
-				//console.log(normalizedCubiesToCoordsMap[key]);				
-				if(normal.x !== 0){
-					if((normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2) === layer)
-						cubiesMoving.push(cubiesMap[key]);
-					//All cubies in same layer should be separated by 1 unit
-					//If we have half, it means we turned an even layer to an odd one or viceversa
-					if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].x - 1/2 + X_DIMENS/2)) === 0.5)
+				//console.log(normalizedCubiesToCoordsMap[key]);
+				if(normalizedCubiesToCoordsMap[key].getComponent(index) - 1/2 + DIMENS[index]/2 === layer)
+					cubiesMoving.push(cubiesMap[key]);
+				//All cubies in same layer should be separated by 1 unit
+				//If we have half, it means we turned an even layer to an odd one or viceversa
+				if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].getComponent(index) - 1/2 + DIMENS[index]/2)) === 0.5)
 						layersColliding = true;
-				}
-				else if(normal.y !== 0){
-					if((normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2) === layer)
-						cubiesMoving.push(cubiesMap[key]);
-					if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].y - 1/2 + Y_DIMENS/2)) === 0.5)
-						layersColliding = true;
-				}
-				else if(normal.z !== 0){
-					if((normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2) === layer)
-						cubiesMoving.push(cubiesMap[key]);
-					if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].z - 1/2 + Z_DIMENS/2)) === 0.5)
-						layersColliding = true;
-				}
 			});	
 		/*
 		cubiesMoving.forEach(function(e){
@@ -238,7 +208,7 @@ function puzzle(){
 		var doNextMove = false;
 		cubiesMoving.forEach(function(c){			
 			rotateAroundWorldAxis(c, movingType, angleDelta);
-			if(actualStep < 0){				
+			if(actualStep < 0){
 				if(movingType.x !== 0)
 					c.rotation.x = Math.round(c.rotation.x / Math.PI * 2) * Math.PI / 2;
 				else if(movingType.y !== 0)
@@ -327,5 +297,16 @@ function puzzle(){
 	
 		object.matrix = rotWorldMatrix;
 		object.rotation.setFromRotationMatrix(object.matrix);
+	}
+	
+	//Returns the index of the biggest component (0->x; 1-> y; 2->z)
+	function getMaximum(vector){
+		var max = Math.max(Math.max(Math.abs(vector.x), Math.abs(vector.y)), Math.abs(vector.z));		
+		if(max === Math.abs(vector.x))
+			return 0;
+		if(max === Math.abs(vector.y))
+			return 1;
+		else if(max === Math.abs(vector.z))
+			return 2;
 	}
 }
