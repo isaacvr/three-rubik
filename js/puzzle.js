@@ -1,9 +1,6 @@
 function puzzle(){
 	//CONSTANTS
 	VOXEL = 2;
-	X_DIMENS = 2;
-	Y_DIMENS = 3;
-	Z_DIMENS = 4;
 	DIMENS = [2, 3, 4];
 	var pivotCenter = new THREE.Vector3(0, 0, 0);
 		
@@ -35,9 +32,9 @@ function puzzle(){
 	var blackText  = new THREE.Vector2(0, 0);
 	
 	this.init = function(scene){
-		this.initCameraX = VOXEL * X_DIMENS * 2;
-		this.initCameraY = VOXEL * Y_DIMENS * 2;
-		this.initCameraZ = VOXEL * Z_DIMENS * 2;
+		this.initCameraX = VOXEL * DIMENS[0] * 2;
+		this.initCameraY = VOXEL * DIMENS[1] * 2;
+		this.initCameraZ = VOXEL * DIMENS[2] * 2;
 		
 		var cubieGeom;
 		
@@ -45,32 +42,32 @@ function puzzle(){
 		meshToCubiesMap = [];
 		cubiesMap = [];
 		normalizedCubiesToCoordsMap = [];
-		for(var y = 0; y < Y_DIMENS; y++){
-			for(var x = 0; x < X_DIMENS; x++){
-				for(var z = 0; z < Z_DIMENS; z++){					
+		for(var y = 0; y < DIMENS[1]; y++){
+			for(var x = 0; x < DIMENS[0]; x++){
+				for(var z = 0; z < DIMENS[2]; z++){					
 					cubieGeom = new THREE.BoxGeometry(VOXEL, VOXEL, VOXEL);
 					
 					cubieGeom.faceVertexUvs[0] = [];
-					cubieGeom.faceVertexUvs[0][0]  = (x == X_DIMENS - 1) ? [redText[0],    redText[1],    redText[3]]    : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][1]  = (x == X_DIMENS - 1) ? [redText[1],    redText[2],    redText[3]]    : [blackText, blackText, blackText];					
-					cubieGeom.faceVertexUvs[0][2]  = (x == 0) 			 ? [orangeText[0], orangeText[1], orangeText[3]] : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][3]  = (x == 0) 			 ? [orangeText[1], orangeText[2], orangeText[3]] : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][4]  = (y == Y_DIMENS - 1) ? [blueText[0],   blueText[1],   blueText[3]]   : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][5]  = (y == Y_DIMENS - 1) ? [blueText[1],   blueText[2],   blueText[3]]   : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][6]  = (y == 0) 			 ? [greenText[0],  greenText[1],  greenText[3]]  : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][7]  = (y == 0) 			 ? [greenText[1],  greenText[2],  greenText[3]]  : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][8]  = (z == Z_DIMENS - 1) ? [yellowText[0], yellowText[1], yellowText[3]] : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][9]  = (z == Z_DIMENS - 1) ? [yellowText[1], yellowText[2], yellowText[3]] : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][10] = (z == 0) 			 ? [whiteText[0],  whiteText[1],  whiteText[3]]  : [blackText, blackText, blackText];
-					cubieGeom.faceVertexUvs[0][11] = (z == 0) 			 ? [whiteText[1],  whiteText[2],  whiteText[3]]  : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][0]  = (x == DIMENS[0] - 1) ? [redText[0],    redText[1],    redText[3]]    : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][1]  = (x == DIMENS[0] - 1) ? [redText[1],    redText[2],    redText[3]]    : [blackText, blackText, blackText];					
+					cubieGeom.faceVertexUvs[0][2]  = (x == 0) 			  ? [orangeText[0], orangeText[1], orangeText[3]] : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][3]  = (x == 0) 			  ? [orangeText[1], orangeText[2], orangeText[3]] : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][4]  = (y == DIMENS[1] - 1) ? [blueText[0],   blueText[1],   blueText[3]]   : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][5]  = (y == DIMENS[1] - 1) ? [blueText[1],   blueText[2],   blueText[3]]   : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][6]  = (y == 0) 			  ? [greenText[0],  greenText[1],  greenText[3]]  : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][7]  = (y == 0) 			  ? [greenText[1],  greenText[2],  greenText[3]]  : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][8]  = (z == DIMENS[2] - 1) ? [yellowText[0], yellowText[1], yellowText[3]] : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][9]  = (z == DIMENS[2] - 1) ? [yellowText[1], yellowText[2], yellowText[3]] : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][10] = (z == 0) 			  ? [whiteText[0],  whiteText[1],  whiteText[3]]  : [blackText, blackText, blackText];
+					cubieGeom.faceVertexUvs[0][11] = (z == 0) 			  ? [whiteText[1],  whiteText[2],  whiteText[3]]  : [blackText, blackText, blackText];
 									
 					//Mesh is offsetted to its position and then added to an Object3D placed in the center
 					//This way, when we rotate Object3D, we pivot meshes around center
 					var cubie = new THREE.Mesh(cubieGeom, cubieMat);
 					cubie.position.set(
-						(x - X_DIMENS / 2) * VOXEL + 1/2 * VOXEL, 
-						(y - Y_DIMENS / 2) * VOXEL + 1/2 * VOXEL, 
-						(z - Z_DIMENS / 2) * VOXEL + 1/2 * VOXEL
+						(x - DIMENS[0]/2) * VOXEL + 1/2 * VOXEL, 
+						(y - DIMENS[1]/2) * VOXEL + 1/2 * VOXEL, 
+						(z - DIMENS[2]/2) * VOXEL + 1/2 * VOXEL
 					);				
 					clickableCubies.push(cubie);					
 					var cubiePivot = new THREE.Object3D();
@@ -79,7 +76,7 @@ function puzzle(){
 					cubiesMap[cubiePivot.uuid] = cubiePivot;
 					meshToCubiesMap[cubie.uuid] = cubiePivot;
 					//In a 3x3x3, center will be (0, 0, 0), blue center (0, 1, 0), etc.
-					normalizedCubiesToCoordsMap[cubiePivot.uuid] = new THREE.Vector3(x - X_DIMENS / 2 + 1/2, y - Y_DIMENS / 2 + 1/2, z - Z_DIMENS / 2 + 1/2);			
+					normalizedCubiesToCoordsMap[cubiePivot.uuid] = new THREE.Vector3(x - DIMENS[0]/2 + 1/2, y - DIMENS[1]/2 + 1/2, z - DIMENS[2]/2 + 1/2);			
 					if(insideCube(x, y, z))
 						continue;
 					scene.add(cubiePivot);
@@ -179,7 +176,7 @@ function puzzle(){
 					cubiesMoving.push(cubiesMap[key]);
 				//All cubies in same layer should be separated by 1 unit
 				//If we have half, it means we turned an even layer to an odd one or viceversa
-				if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].getComponent(index) - 1/2 + DIMENS[index]/2)) === 0.5)
+				if(Math.abs(layer - (normalizedCubiesToCoordsMap[key].getComponent(index) - 1/2 + DIMENS[index]/2)) === 1/2)
 						layersColliding = true;
 			});	
 		/*
@@ -229,7 +226,7 @@ function puzzle(){
 		scrambling = true;
 		var axis = ['x', 'y', 'z']
 		axis = axis[Math.floor(Math.random() * 3)];				
-		var layer = Math.floor(Math.random() * ((axis === 'x') ? X_DIMENS : (axis === 'y') ? Y_DIMENS : Z_DIMENS));
+		var layer = Math.floor(Math.random() * ((axis === 'x') ? DIMENS[0] : (axis === 'y') ? DIMENS[1] : DIMENS[2]));
 		var inverted = Math.floor(((Math.random() * 2) % 2 === 0));
 		scramblingIndex++;
 		if(scramblingIndex === 100){
@@ -250,11 +247,11 @@ function puzzle(){
 	
 	this.changeDimensions = function(x, y, z){
 		if(x)
-			X_DIMENS = x;
+			DIMENS[0] = x;
 		if(y)
-			Y_DIMENS = y;
+			DIMENS[1] = y;
 		if(z)
-			Z_DIMENS = z;
+			DIMENS[2] = z;
 	}
 	
 	//Applies 90 degree turn to coords
@@ -285,7 +282,7 @@ function puzzle(){
 	
 	//Used to find surface cubies so inner ones are not rendered
 	function insideCube(x, y, z){
-		return !(x == 0 || (x == X_DIMENS - 1) || y == 0 || (y == Y_DIMENS - 1) || z == 0 || z == (Z_DIMENS - 1));
+		return !(x == 0 || (x == DIMENS[0] - 1) || y == 0 || (y == DIMENS[1] - 1) || z == 0 || z == (DIMENS[2] - 1));
 	}
 	
 	// Rotate an object around an arbitrary axis in world space   
