@@ -3,10 +3,7 @@
 	<head>
 		<title>Rubik simulator by Jorge Bellon</title>
 		<meta charset="UTF-8">
-		<link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-		<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-		<link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+		<link rel="stylesheet" type="text/css" href="stylesheets/index.css" />
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<script type="text/javascript">
@@ -40,52 +37,40 @@
 		<script src="js/lib/OrbitControls.js"></script>
 		<script src="js/lib/Projector.js"></script>
 		<script src="js/puzzle.js"></script>		
-		<link type="text/css" rel="stylesheet" href="index.css" />
 	</head>
 
 	<body>
-		<section class="page-header">
-		  <h1 class="project-name">Three-rubik</h1>
-		  <h2 class="project-tagline">Rubik&#39;s cube like puzzle simulator based on Three.js</h2>
-		  <a href="https://github.com/pichoneto/three-rubik" class="btn">View on GitHub</a>
-		  <a href="https://github.com/pichoneto/three-rubik/zipball/master" class="btn">Download .zip</a>
-		  <a href="https://github.com/pichoneto/three-rubik/tarball/master" class="btn">Download .tar.gz</a>
-		</section>
-
-		<section class="main-content">
-			<div id="container"></div>		
-			<input type="image" class="button_no_margin" id="solve_button" src="img/solved.png" onclick="puzzle.reset(scene)" ontouchstart="puzzle.reset(scene)" />
-			<input type="image" class="button_no_margin" id="scramble_button" src="img/scrambled.png" onclick="if(!puzzle.isScrambling()) puzzle.scramble()" ontouchstart="if(!puzzle.isScrambling()) puzzle.scramble()" />
-			<input type="image" class="button_no_margin" id="settings_button" src="img/settings.png" onclick="toggle_visibility('popup-settings')" ontouchstart="toggle_visibility('popup-settings')" />
-
-			<div id="popup-settings" class="popup-position" onclick="toggle_visibility('popup-settings')" ontouchstart="toggle_visibility('popup-settings')">
-				<div id="popup-wrapper" onclick="if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;" ontouchstart="if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;">
-					<div id="popup-container">
-							<h1>Settings</h1>
-							<h2>X size</h2>
-							<div style="margin-left: 20px">
-								<button onclick="changeValue(-1, 'x')" ontouchstart="changeValue(-1, 'x')">-</button>
-								<h3 id="x_label">3</h3>
-								<button onclick="changeValue(+1, 'x')" ontouchstart="changeValue(+1, 'x')">+</button>
-							</div>
-							<h2>Y size</h2>
-							<div style="margin-left: 20px">
-								<button onclick="changeValue(-1, 'y')" ontouchstart="changeValue(-1, 'y')">-</button>
-								<h3 id="y_label">3</h3>
-								<button onclick="changeValue(+1, 'y')" ontouchstart="changeValue(+1, 'y')">+</button>
-							</div>
-							<h2>Z size</h2>
-							<div style="margin-left: 20px">
-								<button onclick="changeValue(-1, 'z')" ontouchstart="changeValue(-1, 'z')">-</button>
-								<h3 id="z_label">3</h3>
-								<button onclick="changeValue(+1, 'z')" ontouchstart="changeValue(+1, 'z')">+</button>
-							</div>
-							<button id="button_new_cube" onclick="generateCube()" ontouchstart="generateCube()">Generate new cube!</button>
-					</div>
+		<div id="container"></div>
+		<input type="image" class="button_no_margin" id="solve_button" src="img/solved.png" onclick="puzzle.reset(scene)" ontouchstart="puzzle.reset(scene)" />
+		<input type="image" class="button_no_margin" id="scramble_button" src="img/scrambled.png" onclick="if(!puzzle.isScrambling()) puzzle.scramble()" ontouchstart="if(!puzzle.isScrambling()) puzzle.scramble()" />
+		<input type="image" class="button_no_margin" id="settings_button" src="img/settings.png" onclick="toggle_visibility('popup-settings')" ontouchstart="toggle_visibility('popup-settings')" />
+		
+		<div id="popup-settings" class="popup-position" onclick="toggle_visibility('popup-settings')" ontouchstart="toggle_visibility('popup-settings')">
+			<div id="popup-wrapper" onclick="if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;" ontouchstart="if(event.stopPropagation){event.stopPropagation();}event.cancelBubble=true;">
+				<div id="popup-container">
+						<h1>Settings</h1>
+						<h2>X size</h2>
+						<div style="margin-left: 20px">
+							<button onclick="changeValue(-1, 'x')" ontouchstart="changeValue(-1, 'x')">-</button>
+							<h3 id="x_label">3</h3>
+							<button onclick="changeValue(+1, 'x')" ontouchstart="changeValue(+1, 'x')">+</button>
+						</div>
+						<h2>Y size</h2>
+						<div style="margin-left: 20px">
+							<button onclick="changeValue(-1, 'y')" ontouchstart="changeValue(-1, 'y')">-</button>
+							<h3 id="y_label">3</h3>
+							<button onclick="changeValue(+1, 'y')" ontouchstart="changeValue(+1, 'y')">+</button>
+						</div>
+						<h2>Z size</h2>
+						<div style="margin-left: 20px">
+							<button onclick="changeValue(-1, 'z')" ontouchstart="changeValue(-1, 'z')">-</button>
+							<h3 id="z_label">3</h3>
+							<button onclick="changeValue(+1, 'z')" ontouchstart="changeValue(+1, 'z')">+</button>
+						</div>
+						<button id="button_new_cube" onclick="generateCube()" ontouchstart="generateCube()">Generate new cube!</button>
 				</div>
-			</div>	
-
-			<script src="js/main.js"></script>
-		</section>
+			</div>
+		</div>	
+		<script src="js/main.js"></script>
 	</body>
 </html>

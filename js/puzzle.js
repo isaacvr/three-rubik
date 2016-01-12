@@ -1,7 +1,7 @@
 function puzzle(){
 	//CONSTANTS
 	VOXEL = 2;
-	DIMENS = [2, 3, 4];
+	DIMENS = [3, 3, 3];
 	var pivotCenter = new THREE.Vector3(0, 0, 0);
 		
 	this.userMovingFace = false; //To prevent moving the cube while trying to move a face
